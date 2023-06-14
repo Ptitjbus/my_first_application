@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:rxdart/rxdart.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:intl/intl.dart';
@@ -55,14 +56,46 @@ class ProductList extends StatefulWidget {
 class _ProductListState extends State<ProductList> {
   final TextEditingController _textFieldController = TextEditingController();
   final List<Product> _products = <Product>[];
+  final TextEditingController _searchController = TextEditingController();
+  final BehaviorSubject<List<String>> _resultsController = BehaviorSubject();
+  List<String> allFoods = [
+    'Abricot',
+    'Banane',
+    'Carotte',
+    'Datte',
+    'Epinard',
+    'Fraise',
+    'Grenade',
+    'Haricot',
+    'Igname',
+    'Jicama',
+    'Kale',
+    'Lentille',
+    'Mangue',
+    'Noix',
+    'Oignon',
+    'Poivron',
+    'Quinoa',
+    'Raisin',
+    'Sarrasin',
+    'Tomate',
+    'Ugli fruit',
+    'Vanille',
+    'Wasabi',
+    'Xigua',
+    'Yam',
+    'Zucchini'
+  ];
   bool _connected = false;
   bool _websocketConnected = false;
   StreamSubscription<ConnectivityResult>? _subscription;
   WebSocketChannel? _channel;
+  final selectedFood = ValueNotifier<String?>(null);
 
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(_onSearchChanged);
     _subscription =
         Connectivity().onConnectivityChanged.listen((resultat) async {
       bool connected = resultat != ConnectivityResult.none;
@@ -80,9 +113,25 @@ class _ProductListState extends State<ProductList> {
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _resultsController.close();
     _subscription?.cancel();
     _disconnectWebSocket();
     super.dispose();
+  }
+
+  void _onSearchChanged() async {
+    _resultsController.add(await searchFoods(_searchController.text));
+  }
+
+  Future<List<String>> searchFoods(String query) async {
+    await Future.delayed(
+        const Duration(seconds: 1)); // simule une latence de réseau
+
+    return allFoods
+        .where((food) => food.toLowerCase().contains(query.toLowerCase()))
+        .toList();
   }
 
   Future<void> _connectWebSocket() async {
@@ -257,7 +306,7 @@ class _ProductListState extends State<ProductList> {
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           color: const Color.fromRGBO(255, 255, 255, 1),
           child: Container(
-            height: 116.0,
+            height: 50.0,
             decoration: BoxDecoration(
               boxShadow: [
                 BoxShadow(
@@ -269,21 +318,6 @@ class _ProductListState extends State<ProductList> {
             ),
             child: Column(
               children: [
-                SizedBox(
-                  width: double.infinity,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 16.0),
-                    child: OutlinedButton(
-                      onPressed: () => _displayDialog(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12.0),
-                        side: const BorderSide(color: Colors.blue, width: 1.0),
-                        textStyle: const TextStyle(fontSize: 16.0),
-                      ),
-                      child: const Text("+ Ajouter un élément à la liste"),
-                    ),
-                  ),
-                ),
                 FractionallySizedBox(
                   widthFactor: 1,
                   child: Padding(
@@ -315,84 +349,119 @@ class _ProductListState extends State<ProductList> {
           minChildSize: 0.85,
           maxChildSize: 0.9,
           builder: (BuildContext context, ScrollController scrollController) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16.0),
-                  topRight: Radius.circular(16.0),
-                ),
-              ),
-              child: SafeArea(
-                child: ListView(
-                  controller: scrollController,
-                  children: [
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text("Nouveau produit"),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          labelText: "Rechercher un produit",
-                          border: OutlineInputBorder(),
+            return ValueListenableBuilder<String?>(
+                valueListenable: selectedFood,
+                builder: (context, food, child) {
+                  if (food == null) {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16.0),
+                          topRight: Radius.circular(16.0),
                         ),
                       ),
-                    ),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.access_alarm,
-                        color: Colors.black54,
-                        size: 32.0,
+                      child: SafeArea(
+                        child: Column(
+                          children: [
+                            const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text(
+                                  "Recherche d'article",
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: TextField(
+                                controller: _searchController,
+                                decoration: const InputDecoration(
+                                  labelText: "Rechercher un produit",
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                            ),
+                            Flexible(
+                              child: StreamBuilder<List<String>>(
+                                stream: _resultsController.stream,
+                                builder: (context, snapshot) {
+                                  if (snapshot.hasData &&
+                                      snapshot.data != null) {
+                                    return ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: snapshot.data!.length,
+                                      itemBuilder: (context, index) {
+                                        return Card(
+                                          color: white,
+                                          child: ListTile(
+                                            title: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  snapshot.data![index],
+                                                ),
+                                                const Icon(
+                                                    Icons.arrow_forward_ios),
+                                              ],
+                                            ),
+                                            onTap: () {
+                                              setState(() {
+                                                selectedFood.value =
+                                                    snapshot.data![index];
+                                              });
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    return const SizedBox.shrink();
+                                  }
+                                },
+                              ),
+                            )
+                          ],
+                        ),
                       ),
-                      title: const Text("Tomates"),
-                      trailing: ElevatedButton(
-                        onPressed: () => {
-                          Navigator.pop(context),
-                          _addProductItem("Tomates")
-                        },
-                        child: const Icon(Icons.add),
+                    );
+                  } else {
+                    return Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(16.0),
+                          topRight: Radius.circular(16.0),
+                        ),
                       ),
-                    ),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.access_alarm,
-                        color: Colors.black54,
-                        size: 32.0,
+                      child: SafeArea(
+                        child: Column(
+                          children: [
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  selectedFood.value!,
+                                  style: const TextStyle(fontSize: 18),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      title: const Text("Salade"),
-                      trailing: ElevatedButton(
-                        onPressed: () =>
-                            {Navigator.pop(context), _addProductItem("Salade")},
-                        child: const Icon(Icons.add),
-                      ),
-                    ),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.alarm_off,
-                        color: Colors.black54,
-                        size: 32.0,
-                      ),
-                      title: const Text("Haricot en conserve"),
-                      trailing: ElevatedButton(
-                        onPressed: () => {
-                          Navigator.pop(context),
-                          _addProductItem("Haricot en conserve")
-                        },
-                        child: const Icon(Icons.add),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
+                    );
+                  }
+                });
           },
         );
       },
-    );
+    ).then((_) {
+      // This callback is called when the modal bottom sheet is dismissed
+      selectedFood.value = null;
+    });
   }
 }
 

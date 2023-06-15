@@ -14,7 +14,7 @@ class UnitRadioWidget extends StatefulWidget {
 }
 
 class _UnitRadioWidgetState extends State<UnitRadioWidget> {
-  MeasurementUnit _selectedUnit = MeasurementUnit.g;
+  MeasurementUnit? _selectedUnit = MeasurementUnit.g;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +28,7 @@ class _UnitRadioWidgetState extends State<UnitRadioWidget> {
             onSelected: (bool selected) {
               widget.onUnitSelect(unit);
               setState(() {
-                _selectedUnit = (selected ? unit : null)!;
+                _selectedUnit = selected ? unit : null;
               });
             },
             selectedColor: red,

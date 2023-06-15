@@ -16,8 +16,9 @@ const Color red = Color.fromARGB(255, 237, 105, 88);
 enum MeasurementUnit { g, mg, kg, piece }
 
 class Product {
-  Product({required this.name, required this.checked});
+  Product({required this.name, required this.checked, this.quantity});
   final String name;
+  final String? quantity;
   bool checked;
 }
 
@@ -41,12 +42,31 @@ class ProductItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CheckboxListTile(
-      onChanged: (bool? value) {
-        onProductChanged(product);
-      },
-      value: product.checked,
-      title: Text(product.name, style: _getTextStyle(product.checked)),
+    return Container(
+      color: white,
+      margin: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 4.0),
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                product.name,
+                style: const TextStyle(color: darkGreen, fontSize: 16.0),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              child: const Icon(
+                Icons.edit,
+                color: darkGreen,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -174,6 +194,7 @@ class _ProductListState extends State<ProductList> {
   }
 
   void sendMessage(String message) {
+    print(message);
     if (_websocketConnected && _channel != null) {
       _channel!.sink.add(message);
     } else {
@@ -184,7 +205,7 @@ class _ProductListState extends State<ProductList> {
   String _convertProductListToStringList(List<Product> list) {
     // send only checked products
     String productList = (list
-            .where((e) => e.checked == true)
+            // .where((e) => e.checked == true)
             .map((e) => '"${e.name}"')
             .toList())
         .toString();
@@ -205,14 +226,16 @@ class _ProductListState extends State<ProductList> {
     });
   }
 
-  void _addProductItem(String name) {
+  void _addProductItem(String name, [String? quantity]) {
     setState(() {
-      _products.add(Product(name: name, checked: false));
+      _products.add(Product(name: name, quantity: quantity, checked: false));
     });
     _textFieldController.clear();
   }
 
-  void onKeyTapped(String value) {
+  void onKeyTapped(
+    String value,
+  ) {
     if (value == 'effacer') {
       enteredNumber.value = enteredNumber.value
           .substring(0, max(0, enteredNumber.value.length - 1));
@@ -269,6 +292,7 @@ class _ProductListState extends State<ProductList> {
         body: Column(
           children: <Widget>[
             SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(0, 16.0, 0, 0),
               child: Column(
                 children: _products.map((Product product) {
                   return ProductItem(
@@ -279,7 +303,7 @@ class _ProductListState extends State<ProductList> {
               ),
             ),
             Container(
-              margin: const EdgeInsets.all(16.0),
+              margin: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 4.0),
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -298,9 +322,7 @@ class _ProductListState extends State<ProductList> {
                       const Expanded(
                         child: Text(
                           'Ajouter un article',
-                          style: TextStyle(
-                            color: darkGreen,
-                          ),
+                          style: TextStyle(color: darkGreen, fontSize: 16.0),
                         ),
                       ),
                       Container(
@@ -471,13 +493,34 @@ class _ProductListState extends State<ProductList> {
                               StateSetter modalSetState) {
                             return Column(
                               children: <Widget>[
-                                Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(18.0),
-                                    child: Text(
-                                      'Article n°${_products.length + 1}',
-                                      style: const TextStyle(fontSize: 18),
-                                    ),
+                                Padding(
+                                  padding: const EdgeInsets.all(18.0),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: <Widget>[
+                                      IconButton(
+                                          onPressed: () => {},
+                                          icon: const Icon(
+                                              Icons.arrow_back_ios_new)),
+                                      Center(
+                                        child: Text(
+                                          'Article n°${_products.length + 1}',
+                                          style: const TextStyle(fontSize: 18),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        child: const Text(
+                                          'Passer',
+                                          style: TextStyle(
+                                              fontSize: 18, color: red),
+                                        ),
+                                        onPressed: () {
+                                          _addProductItem(
+                                              selectedFood.value.toString());
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 Padding(
@@ -529,24 +572,22 @@ class _ProductListState extends State<ProductList> {
                                   width: double.infinity,
                                   child: TextButton(
                                     style: TextButton.styleFrom(
-                                      backgroundColor:
-                                          red, // Set the color of the button
+                                      backgroundColor: red,
                                       shape: RoundedRectangleBorder(
-                                        // Define the shape
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
                                     onPressed: () => {
                                       Navigator.pop(context),
-                                      _addProductItem(selectedFood.value!)
+                                      _addProductItem(selectedFood.value!,
+                                          '$enteredNumber $selectedUnit')
                                     },
                                     child: const Padding(
                                       padding: EdgeInsets.all(16.0),
                                       child: Text(
                                         'Ajouter à la liste',
                                         style: TextStyle(
-                                          color: Colors
-                                              .white, // Set the color of the text
+                                          color: Colors.white,
                                         ),
                                       ),
                                     ),
@@ -565,8 +606,9 @@ class _ProductListState extends State<ProductList> {
         );
       },
     ).then((_) {
-      // This callback is called when the modal bottom sheet is dismissed
       selectedFood.value = null;
+      enteredNumber.value = "";
+      selectedUnit.value = "g";
     });
   }
 }

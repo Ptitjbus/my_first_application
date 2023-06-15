@@ -1,16 +1,19 @@
 import 'dart:async';
-import 'dart:io';
-import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:intl/intl.dart';
+import 'radio.dart';
+import 'keyboard.dart';
 
 const Color darkGreen = Color(0xFF2E5245);
 const Color white = Color(0xFFFDF3E8);
 const Color red = Color.fromARGB(255, 237, 105, 88);
+
+enum MeasurementUnit { g, mg, kg, piece }
 
 class Product {
   Product({required this.name, required this.checked});
@@ -91,6 +94,9 @@ class _ProductListState extends State<ProductList> {
   StreamSubscription<ConnectivityResult>? _subscription;
   WebSocketChannel? _channel;
   final selectedFood = ValueNotifier<String?>(null);
+  final enteredNumber = ValueNotifier<String>("");
+  final selectedUnit = ValueNotifier<String>("g");
+  // String enteredNumber = "";
 
   @override
   void initState() {
@@ -204,6 +210,19 @@ class _ProductListState extends State<ProductList> {
       _products.add(Product(name: name, checked: false));
     });
     _textFieldController.clear();
+  }
+
+  void onKeyTapped(String value) {
+    if (value == 'effacer') {
+      enteredNumber.value = enteredNumber.value
+          .substring(0, max(0, enteredNumber.value.length - 1));
+    } else {
+      enteredNumber.value += value;
+    }
+  }
+
+  void onUnitSelected(unit) {
+    selectedUnit.value = unit;
   }
 
   @override
@@ -355,85 +374,87 @@ class _ProductListState extends State<ProductList> {
                 builder: (context, food, child) {
                   if (food == null) {
                     return Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(16.0),
-                          topRight: Radius.circular(16.0),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(16.0),
+                            topRight: Radius.circular(16.0),
+                          ),
                         ),
-                      ),
-                      child: SafeArea(
-                        child: Column(
-                          children: [
-                            const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(18.0),
-                                child: Text(
-                                  "Recherche d'article",
-                                  style: TextStyle(fontSize: 18),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: SafeArea(
+                            child: Column(
+                              children: [
+                                const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(18.0),
+                                    child: Text(
+                                      "Recherche d'article",
+                                      style: TextStyle(fontSize: 18),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: TextField(
-                                controller: _searchController,
-                                decoration: const InputDecoration(
-                                  labelText: "Rechercher un produit",
-                                  border: OutlineInputBorder(),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: TextField(
+                                    controller: _searchController,
+                                    decoration: const InputDecoration(
+                                      labelText: "Rechercher un produit",
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                            Flexible(
-                              child: StreamBuilder<List<String>>(
-                                stream: _resultsController.stream,
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasData &&
-                                      snapshot.data != null) {
-                                    return ListView.builder(
-                                      shrinkWrap: true,
-                                      itemCount: snapshot.data!.length,
-                                      itemBuilder: (context, index) {
-                                        return Card(
-                                          elevation: 0,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10.0),
-                                          ),
-                                          color: white,
-                                          child: ListTile(
-                                            title: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text(
-                                                  snapshot.data![index],
+                                Flexible(
+                                  child: StreamBuilder<List<String>>(
+                                    stream: _resultsController.stream,
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData &&
+                                          snapshot.data != null) {
+                                        return ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: snapshot.data!.length,
+                                          itemBuilder: (context, index) {
+                                            return Card(
+                                              elevation: 0,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10.0),
+                                              ),
+                                              color: white,
+                                              child: ListTile(
+                                                title: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      snapshot.data![index],
+                                                    ),
+                                                    const Icon(Icons
+                                                        .arrow_forward_ios),
+                                                  ],
                                                 ),
-                                                const Icon(
-                                                    Icons.arrow_forward_ios),
-                                              ],
-                                            ),
-                                            onTap: () {
-                                              setState(() {
-                                                selectedFood.value =
-                                                    snapshot.data![index];
-                                              });
-                                            },
-                                          ),
+                                                onTap: () {
+                                                  setState(() {
+                                                    selectedFood.value =
+                                                        snapshot.data![index];
+                                                  });
+                                                },
+                                              ),
+                                            );
+                                          },
                                         );
-                                      },
-                                    );
-                                  } else {
-                                    return const SizedBox.shrink();
-                                  }
-                                },
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                    );
+                                      } else {
+                                        return const SizedBox.shrink();
+                                      }
+                                    },
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ));
                   } else {
                     return Container(
                       decoration: const BoxDecoration(
@@ -443,53 +464,98 @@ class _ProductListState extends State<ProductList> {
                           topRight: Radius.circular(16.0),
                         ),
                       ),
-                      child: SafeArea(
-                        child: Column(
-                          children: [
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(18.0),
-                                child: Text(
-                                  'Article n°${_products.length + 1}',
-                                  style: const TextStyle(fontSize: 18),
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(40.0),
-                              child: Text(
-                                selectedFood.value!,
-                                style: const TextStyle(
-                                    fontSize: 28, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            const Spacer(), // This will push the button to the bottom
-                            TextButton(
-                              style: TextButton.styleFrom(
-                                backgroundColor:
-                                    red, // Set the color of the button
-                                shape: RoundedRectangleBorder(
-                                  // Define the shape
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: () => {
-                                Navigator.pop(context),
-                                _addProductItem(selectedFood.value!)
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Text(
-                                  'Ajouter à la liste',
-                                  style: TextStyle(
-                                    color: Colors
-                                        .white, // Set the color of the text
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: SafeArea(
+                          child: StatefulBuilder(builder: (BuildContext context,
+                              StateSetter modalSetState) {
+                            return Column(
+                              children: <Widget>[
+                                Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(18.0),
+                                    child: Text(
+                                      'Article n°${_products.length + 1}',
+                                      style: const TextStyle(fontSize: 18),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                          ],
+                                Padding(
+                                  padding: const EdgeInsets.all(40.0),
+                                  child: Text(
+                                    selectedFood.value!,
+                                    style: const TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                const Spacer(),
+                                ValueListenableBuilder<String>(
+                                    valueListenable: enteredNumber,
+                                    builder: (context, number, child) {
+                                      return ValueListenableBuilder(
+                                          valueListenable: selectedUnit,
+                                          builder: (context, unit, child) {
+                                            return Expanded(
+                                              flex: 1,
+                                              child: Center(
+                                                child: Text(
+                                                  '${enteredNumber.value.length > 0 ? enteredNumber.value : 0} ${selectedUnit.value}',
+                                                  style: const TextStyle(
+                                                      fontSize: 24,
+                                                      color: darkGreen),
+                                                ),
+                                              ),
+                                            );
+                                          });
+                                    }),
+                                const Divider(
+                                  color: darkGreen,
+                                  thickness: 2,
+                                ),
+                                SizedBox(
+                                    height: 260,
+                                    child: KeyboardWidget(
+                                      onKeyTap: (key) {
+                                        onKeyTapped(key);
+                                      },
+                                    )),
+                                UnitRadioWidget(
+                                  onUnitSelect: (unit) {
+                                    onUnitSelected(unit.name.toString());
+                                  },
+                                ),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: TextButton(
+                                    style: TextButton.styleFrom(
+                                      backgroundColor:
+                                          red, // Set the color of the button
+                                      shape: RoundedRectangleBorder(
+                                        // Define the shape
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    onPressed: () => {
+                                      Navigator.pop(context),
+                                      _addProductItem(selectedFood.value!)
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Text(
+                                        'Ajouter à la liste',
+                                        style: TextStyle(
+                                          color: Colors
+                                              .white, // Set the color of the text
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                              ],
+                            );
+                          }),
                         ),
                       ),
                     );
@@ -509,7 +575,7 @@ class ProductApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Product list',
+      title: 'Frogy Liste de courses',
       home: ProductList(),
     );
   }

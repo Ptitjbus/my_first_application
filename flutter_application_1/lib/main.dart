@@ -278,7 +278,7 @@ class _ProductListState extends State<ProductList> {
                     children: <Widget>[
                       const Expanded(
                         child: Text(
-                          'Votre texte ici',
+                          'Ajouter un article',
                           style: TextStyle(
                             color: darkGreen,
                           ),
@@ -325,6 +325,7 @@ class _ProductListState extends State<ProductList> {
                     child: ElevatedButton(
                       onPressed: () => _sendList(_products),
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: red,
                         padding: const EdgeInsets.symmetric(vertical: 12.0),
                         textStyle: const TextStyle(fontSize: 16.0),
                       ),
@@ -366,7 +367,7 @@ class _ProductListState extends State<ProductList> {
                           children: [
                             const Center(
                               child: Padding(
-                                padding: EdgeInsets.all(8.0),
+                                padding: EdgeInsets.all(18.0),
                                 child: Text(
                                   "Recherche d'article",
                                   style: TextStyle(fontSize: 18),
@@ -394,6 +395,11 @@ class _ProductListState extends State<ProductList> {
                                       itemCount: snapshot.data!.length,
                                       itemBuilder: (context, index) {
                                         return Card(
+                                          elevation: 0,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10.0),
+                                          ),
                                           color: white,
                                           child: ListTile(
                                             title: Row(
@@ -442,13 +448,47 @@ class _ProductListState extends State<ProductList> {
                           children: [
                             Center(
                               child: Padding(
-                                padding: const EdgeInsets.all(8.0),
+                                padding: const EdgeInsets.all(18.0),
                                 child: Text(
-                                  selectedFood.value!,
+                                  'Article n°${_products.length + 1}',
                                   style: const TextStyle(fontSize: 18),
                                 ),
                               ),
                             ),
+                            Padding(
+                              padding: const EdgeInsets.all(40.0),
+                              child: Text(
+                                selectedFood.value!,
+                                style: const TextStyle(
+                                    fontSize: 28, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const Spacer(), // This will push the button to the bottom
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor:
+                                    red, // Set the color of the button
+                                shape: RoundedRectangleBorder(
+                                  // Define the shape
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () => {
+                                Navigator.pop(context),
+                                _addProductItem(selectedFood.value!)
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'Ajouter à la liste',
+                                  style: TextStyle(
+                                    color: Colors
+                                        .white, // Set the color of the text
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
                           ],
                         ),
                       ),

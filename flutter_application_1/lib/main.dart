@@ -15,16 +15,21 @@ const Color white = Color(0xFFFDF3E8);
 const Color red = Color.fromARGB(255, 237, 105, 88);
 
 class Product {
-  Product({required this.name, this.quantity, this.unit});
+  Product({required this.name, this.quantity, this.unit, required this.units});
   final String name;
-  final String? quantity;
-  final String? unit;
+  String? quantity;
+  String? unit;
+  final List<String> units;
 }
 
 class ProductItem extends StatelessWidget {
-  ProductItem({required this.product}) : super(key: ObjectKey(product));
-
   final Product product;
+  final Function(Product) onIconPressed;
+
+  ProductItem({
+    required this.product,
+    required this.onIconPressed,
+  }) : super(key: ObjectKey(product));
 
   @override
   Widget build(BuildContext context) {
@@ -61,11 +66,14 @@ class ProductItem extends StatelessWidget {
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(8.0),
-              child: const Icon(
-                Icons.edit,
-                color: darkGreen,
+            GestureDetector(
+              onTap: () => onIconPressed(product),
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                child: const Icon(
+                  Icons.edit,
+                  color: darkGreen,
+                ),
               ),
             ),
           ],
@@ -133,7 +141,6 @@ class _ProductListState extends State<ProductList> {
   final selectedFood = ValueNotifier<Map<String, List<String>>?>(null);
   final enteredNumber = ValueNotifier<String>("");
   final selectedUnit = ValueNotifier<String>("");
-  // String enteredNumber = "";
 
   @override
   void initState() {
@@ -240,9 +247,11 @@ class _ProductListState extends State<ProductList> {
     sendMessage(stringList);
   }
 
-  void _addProductItem(String name, [String? quantity, String? unit]) {
+  void _addProductItem(String name, List<String> units,
+      [String? quantity, String? unit]) {
     setState(() {
-      _products.add(Product(name: name, quantity: quantity, unit: unit));
+      _products.add(
+          Product(name: name, quantity: quantity, unit: unit, units: units));
     });
     _textFieldController.clear();
   }
@@ -312,6 +321,11 @@ class _ProductListState extends State<ProductList> {
                   children: _products.map((Product product) {
                     return ProductItem(
                       product: product,
+                      onIconPressed: (product) {
+                        enteredNumber.value = product.quantity!;
+                        selectedUnit.value = product.unit!;
+                        __displayEditionDialog(context, product);
+                      },
                     );
                   }).toList(),
                 ),
@@ -393,6 +407,144 @@ class _ProductListState extends State<ProductList> {
             ),
           ),
         ));
+  }
+
+  void __displayEditionDialog(BuildContext context, Product product) {
+    showModalBottomSheet(
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        context: context,
+        builder: (BuildContext context) {
+          return DraggableScrollableSheet(
+            initialChildSize: 0.9,
+            minChildSize: 0.85,
+            maxChildSize: 0.9,
+            builder: (BuildContext context, ScrollController scrollController) {
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16.0),
+                    topRight: Radius.circular(16.0),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: SafeArea(
+                    child: StatefulBuilder(builder:
+                        (BuildContext context, StateSetter modalSetState) {
+                      return Column(
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.all(18.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                IconButton(
+                                    onPressed: () => {},
+                                    icon: const Icon(Icons.arrow_back_ios_new)),
+                                const Center(
+                                  child: Text(
+                                    'Edition',
+                                    style: TextStyle(fontSize: 18),
+                                  ),
+                                ),
+                                TextButton(
+                                  child: const Text(
+                                    'Supprimer',
+                                    style: TextStyle(fontSize: 18, color: red),
+                                  ),
+                                  onPressed: () => {
+                                    Navigator.pop(context),
+                                    // _deleteProductItem(product)
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(40.0),
+                            child: Text(
+                              product.name,
+                              style: const TextStyle(
+                                  fontSize: 28, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const Spacer(),
+                          ValueListenableBuilder<String>(
+                              valueListenable: enteredNumber,
+                              builder: (context, number, child) {
+                                return ValueListenableBuilder(
+                                    valueListenable: selectedUnit,
+                                    builder: (context, unit, child) {
+                                      return Expanded(
+                                        flex: 1,
+                                        child: Center(
+                                          child: Text(
+                                            '${enteredNumber.value.length > 0 ? enteredNumber.value : 0} ${selectedUnit.value}',
+                                            style: const TextStyle(
+                                                fontSize: 24, color: darkGreen),
+                                          ),
+                                        ),
+                                      );
+                                    });
+                              }),
+                          const Divider(
+                            color: darkGreen,
+                            thickness: 2,
+                          ),
+                          SizedBox(
+                              height: 260,
+                              child: KeyboardWidget(
+                                onKeyTap: (key) {
+                                  onKeyTapped(key);
+                                },
+                              )),
+                          UnitRadioWidget(
+                            measurementUnits: product.units,
+                            onUnitSelect: (unit) {
+                              onUnitSelected(unit);
+                            },
+                          ),
+                          SizedBox(
+                            width: double.infinity,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: red,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: () => {
+                                Navigator.pop(context),
+                                product.quantity = enteredNumber.value,
+                                product.unit = selectedUnit.value
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text(
+                                  'Modifier',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      );
+                    }),
+                  ),
+                ),
+              );
+            },
+          );
+        }).then((_) {
+      selectedFood.value = null;
+      enteredNumber.value = "";
+      selectedUnit.value = "";
+    });
   }
 
   void _displayDialog(BuildContext context) {
@@ -541,7 +693,8 @@ class _ProductListState extends State<ProductList> {
                                         onPressed: () => {
                                           Navigator.pop(context),
                                           _addProductItem(
-                                              selectedFood.value!.keys.first)
+                                              selectedFood.value!.keys.first,
+                                              selectedFood.value!.values.first)
                                         },
                                       ),
                                     ],
@@ -607,6 +760,7 @@ class _ProductListState extends State<ProductList> {
                                       Navigator.pop(context),
                                       _addProductItem(
                                           selectedFood.value!.keys.first,
+                                          selectedFood.value!.values.first,
                                           enteredNumber.value,
                                           selectedUnit.value)
                                     },

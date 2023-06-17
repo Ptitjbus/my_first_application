@@ -10,40 +10,29 @@ import 'radio.dart';
 import 'keyboard.dart';
 
 const Color darkGreen = Color(0xFF2E5245);
+const Color darkGreen50 = Color.fromRGBO(46, 82, 69, 0.5);
 const Color white = Color(0xFFFDF3E8);
 const Color red = Color.fromARGB(255, 237, 105, 88);
 
-enum MeasurementUnit { g, mg, kg, piece }
-
 class Product {
-  Product({required this.name, required this.checked, this.quantity});
+  Product({required this.name, this.quantity, this.unit});
   final String name;
   final String? quantity;
-  bool checked;
+  final String? unit;
 }
 
 class ProductItem extends StatelessWidget {
-  ProductItem({
-    required this.product,
-    required this.onProductChanged,
-  }) : super(key: ObjectKey(product));
+  ProductItem({required this.product}) : super(key: ObjectKey(product));
 
   final Product product;
-  final onProductChanged;
-
-  TextStyle? _getTextStyle(bool checked) {
-    if (!checked) return null;
-
-    return const TextStyle(
-      color: Colors.black54,
-      decoration: TextDecoration.lineThrough,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: white,
+      decoration: BoxDecoration(
+        color: white,
+        borderRadius: BorderRadius.circular(10),
+      ),
       margin: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 4.0),
       width: double.infinity,
       child: Padding(
@@ -52,9 +41,24 @@ class ProductItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
             Expanded(
-              child: Text(
-                product.name,
-                style: const TextStyle(color: darkGreen, fontSize: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment
+                    .start, // to align the text at the start of your column
+                children: <Widget>[
+                  Text(
+                    product.name,
+                    style: const TextStyle(color: darkGreen, fontSize: 16.0),
+                  ),
+                  if (product.quantity != null &&
+                      product.unit !=
+                          null) // assuming quantity is a nullable property of Product
+                    Text(
+                      '${product.quantity} ${product.unit}', // Display the quantity of product
+                      style: const TextStyle(
+                          color: darkGreen50,
+                          fontSize: 14.0), // Adjust the style as you need
+                    ),
+                ],
               ),
             ),
             Container(
@@ -80,42 +84,55 @@ class _ProductListState extends State<ProductList> {
   final TextEditingController _textFieldController = TextEditingController();
   final List<Product> _products = <Product>[];
   final TextEditingController _searchController = TextEditingController();
-  final BehaviorSubject<List<String>> _resultsController = BehaviorSubject();
-  List<String> allFoods = [
-    'Abricot',
-    'Banane',
-    'Carotte',
-    'Datte',
-    'Epinard',
-    'Fraise',
-    'Grenade',
-    'Haricot',
-    'Igname',
-    'Jicama',
-    'Kale',
-    'Lentille',
-    'Mangue',
-    'Noix',
-    'Oignon',
-    'Poivron',
-    'Quinoa',
-    'Raisin',
-    'Sarrasin',
-    'Tomate',
-    'Ugli fruit',
-    'Vanille',
-    'Wasabi',
-    'Xigua',
-    'Yam',
-    'Zucchini'
-  ];
+  final BehaviorSubject<Map<String, List<String>>> _resultsController =
+      BehaviorSubject();
+  Map<String, List<String>> allFoods = {
+    'Abricot': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Banane': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Carotte': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Epinard': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Fraise': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Grenade': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Haricot': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Lentille': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Mangue': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Noix': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Oignon': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Poivron': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Raisin': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Tomate': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Vanille': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Lait': ['l', 'ml', 'pièce(s)'],
+    'Œufs': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Beurre': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Yaourts nature': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Fromage': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Poulet': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Saumon': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Tofu': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Pâtes': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Riz': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Farine': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Sucre': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Huile d\'olive': ['l', 'ml', 'pièce(s)'],
+    'Pain complet': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Céréales': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Pois chiches en conserve': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Tomates pelées en conserve': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Petits pois surgelés': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Jus d\'orange ': ['l', 'ml', 'pièce(s)'],
+    'Papier toilette': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Dentifrice': ['l', 'ml', 'pièce(s)'],
+    'Savon': ['l', 'ml', 'pièce(s)'],
+    'Détergent à lessive': ['l', 'ml', 'pièce(s)'],
+  };
   bool _connected = false;
   bool _websocketConnected = false;
   StreamSubscription<ConnectivityResult>? _subscription;
   WebSocketChannel? _channel;
-  final selectedFood = ValueNotifier<String?>(null);
+  final selectedFood = ValueNotifier<Map<String, List<String>>?>(null);
   final enteredNumber = ValueNotifier<String>("");
-  final selectedUnit = ValueNotifier<String>("g");
+  final selectedUnit = ValueNotifier<String>("");
   // String enteredNumber = "";
 
   @override
@@ -151,13 +168,16 @@ class _ProductListState extends State<ProductList> {
     _resultsController.add(await searchFoods(_searchController.text));
   }
 
-  Future<List<String>> searchFoods(String query) async {
+  Future<Map<String, List<String>>> searchFoods(String query) async {
     await Future.delayed(
         const Duration(seconds: 1)); // simule une latence de réseau
 
-    return allFoods
+    return allFoods.keys
         .where((food) => food.toLowerCase().contains(query.toLowerCase()))
-        .toList();
+        .fold<Map<String, List<String>>>({}, (map, key) {
+      map[key] = allFoods[key]!;
+      return map;
+    });
   }
 
   Future<void> _connectWebSocket() async {
@@ -220,15 +240,9 @@ class _ProductListState extends State<ProductList> {
     sendMessage(stringList);
   }
 
-  void _handleProductChange(Product product) {
+  void _addProductItem(String name, [String? quantity, String? unit]) {
     setState(() {
-      product.checked = !product.checked;
-    });
-  }
-
-  void _addProductItem(String name, [String? quantity]) {
-    setState(() {
-      _products.add(Product(name: name, quantity: quantity, checked: false));
+      _products.add(Product(name: name, quantity: quantity, unit: unit));
     });
     _textFieldController.clear();
   }
@@ -289,59 +303,60 @@ class _ProductListState extends State<ProductList> {
           ),
           elevation: 0.0,
         ),
-        body: Column(
-          children: <Widget>[
-            SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(0, 16.0, 0, 0),
-              child: Column(
-                children: _products.map((Product product) {
-                  return ProductItem(
-                    product: product,
-                    onProductChanged: _handleProductChange,
-                  );
-                }).toList(),
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 4.0),
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                ),
-                onPressed: () => _displayDialog(context),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: <Widget>[
-                      const Expanded(
-                        child: Text(
-                          'Ajouter un article',
-                          style: TextStyle(color: darkGreen, fontSize: 16.0),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: red,
-                        ),
-                        child: const Icon(
-                          Icons.add,
-                          color: white,
-                        ),
-                      ),
-                    ],
-                  ),
+        body: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(0, 16.0, 0, 0),
+                child: Column(
+                  children: _products.map((Product product) {
+                    return ProductItem(
+                      product: product,
+                    );
+                  }).toList(),
                 ),
               ),
-            ),
-          ],
+              Container(
+                margin: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 4.0),
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                  ),
+                  onPressed: () => _displayDialog(context),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: <Widget>[
+                        const Expanded(
+                          child: Text(
+                            'Ajouter un article',
+                            style: TextStyle(color: darkGreen, fontSize: 16.0),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: red,
+                          ),
+                          child: const Icon(
+                            Icons.add,
+                            color: white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         bottomNavigationBar: BottomAppBar(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -391,7 +406,7 @@ class _ProductListState extends State<ProductList> {
           minChildSize: 0.85,
           maxChildSize: 0.9,
           builder: (BuildContext context, ScrollController scrollController) {
-            return ValueListenableBuilder<String?>(
+            return ValueListenableBuilder<Map<String, List<String>>?>(
                 valueListenable: selectedFood,
                 builder: (context, food, child) {
                   if (food == null) {
@@ -428,7 +443,8 @@ class _ProductListState extends State<ProductList> {
                                   ),
                                 ),
                                 Flexible(
-                                  child: StreamBuilder<List<String>>(
+                                  child:
+                                      StreamBuilder<Map<String, List<String>>>(
                                     stream: _resultsController.stream,
                                     builder: (context, snapshot) {
                                       if (snapshot.hasData &&
@@ -437,6 +453,8 @@ class _ProductListState extends State<ProductList> {
                                           shrinkWrap: true,
                                           itemCount: snapshot.data!.length,
                                           itemBuilder: (context, index) {
+                                            final entry = snapshot.data!.entries
+                                                .elementAt(index);
                                             return Card(
                                               elevation: 0,
                                               shape: RoundedRectangleBorder(
@@ -451,7 +469,7 @@ class _ProductListState extends State<ProductList> {
                                                           .spaceBetween,
                                                   children: [
                                                     Text(
-                                                      snapshot.data![index],
+                                                      entry.key,
                                                     ),
                                                     const Icon(Icons
                                                         .arrow_forward_ios),
@@ -459,8 +477,13 @@ class _ProductListState extends State<ProductList> {
                                                 ),
                                                 onTap: () {
                                                   setState(() {
-                                                    selectedFood.value =
-                                                        snapshot.data![index];
+                                                    selectedFood.value = {
+                                                      entry.key: entry.value
+                                                    };
+                                                  });
+                                                  setState(() {
+                                                    selectedUnit.value =
+                                                        entry.value[0];
                                                   });
                                                 },
                                               ),
@@ -515,9 +538,10 @@ class _ProductListState extends State<ProductList> {
                                           style: TextStyle(
                                               fontSize: 18, color: red),
                                         ),
-                                        onPressed: () {
+                                        onPressed: () => {
+                                          Navigator.pop(context),
                                           _addProductItem(
-                                              selectedFood.value.toString());
+                                              selectedFood.value!.keys.first)
                                         },
                                       ),
                                     ],
@@ -526,7 +550,7 @@ class _ProductListState extends State<ProductList> {
                                 Padding(
                                   padding: const EdgeInsets.all(40.0),
                                   child: Text(
-                                    selectedFood.value!,
+                                    selectedFood.value!.keys.first,
                                     style: const TextStyle(
                                         fontSize: 28,
                                         fontWeight: FontWeight.bold),
@@ -564,8 +588,10 @@ class _ProductListState extends State<ProductList> {
                                       },
                                     )),
                                 UnitRadioWidget(
+                                  measurementUnits:
+                                      selectedFood.value!.values.first,
                                   onUnitSelect: (unit) {
-                                    onUnitSelected(unit.name.toString());
+                                    onUnitSelected(unit);
                                   },
                                 ),
                                 SizedBox(
@@ -574,13 +600,15 @@ class _ProductListState extends State<ProductList> {
                                     style: TextButton.styleFrom(
                                       backgroundColor: red,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
                                     onPressed: () => {
                                       Navigator.pop(context),
-                                      _addProductItem(selectedFood.value!,
-                                          '$enteredNumber $selectedUnit')
+                                      _addProductItem(
+                                          selectedFood.value!.keys.first,
+                                          enteredNumber.value,
+                                          selectedUnit.value)
                                     },
                                     child: const Padding(
                                       padding: EdgeInsets.all(16.0),
@@ -608,7 +636,7 @@ class _ProductListState extends State<ProductList> {
     ).then((_) {
       selectedFood.value = null;
       enteredNumber.value = "";
-      selectedUnit.value = "g";
+      selectedUnit.value = "";
     });
   }
 }
@@ -617,6 +645,7 @@ class ProductApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Frogy Liste de courses',
       home: ProductList(),
     );

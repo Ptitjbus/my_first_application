@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'main.dart';
 
-enum MeasurementUnit { g, mg, kg, piece }
-
 class UnitRadioWidget extends StatefulWidget {
-  final Function(MeasurementUnit) onUnitSelect;
+  final Function(String) onUnitSelect;
+  final List<String> measurementUnits;
 
-  const UnitRadioWidget({Key? key, required this.onUnitSelect})
+  const UnitRadioWidget(
+      {Key? key, required this.onUnitSelect, required this.measurementUnits})
       : super(key: key);
 
   @override
@@ -14,16 +14,22 @@ class UnitRadioWidget extends StatefulWidget {
 }
 
 class _UnitRadioWidgetState extends State<UnitRadioWidget> {
-  MeasurementUnit? _selectedUnit = MeasurementUnit.g;
+  String? _selectedUnit;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedUnit = widget.measurementUnits[0];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: MeasurementUnit.values.map((unit) {
+      children: widget.measurementUnits.map((unit) {
         return Expanded(
           child: ChoiceChip(
-            label: Text(unit.toString().split('.').last),
+            label: Text(unit),
             selected: _selectedUnit == unit,
             onSelected: (bool selected) {
               widget.onUnitSelect(unit);

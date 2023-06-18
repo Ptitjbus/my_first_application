@@ -1,6 +1,6 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:poc_liste_de_courses/shopEnd.dart';
 import 'keyboard.dart';
 import 'main.dart';
 import 'radio.dart';
@@ -8,10 +8,111 @@ import 'radio.dart';
 class SecondPage extends StatefulWidget {
   final List<Product> products;
 
-  SecondPage({required this.products});
+  const SecondPage({super.key, required this.products});
 
   @override
   _SecondPageState createState() => _SecondPageState();
+}
+
+class ProductShoppingItem extends StatefulWidget {
+  final Product product;
+  final Function(Product) onIconPressed;
+  final Function(Product) onCheckedAdd;
+  final Function(Product) onCheckedRemove;
+
+  ProductShoppingItem({
+    required this.product,
+    required this.onIconPressed,
+    required this.onCheckedAdd,
+    required this.onCheckedRemove,
+  }) : super(key: ObjectKey(product));
+
+  @override
+  _ProductShoppingItemState createState() => _ProductShoppingItemState();
+}
+
+class _ProductShoppingItemState extends State<ProductShoppingItem> {
+  bool _isChecked =
+      false; // This variable will control if the product is checked
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 4.0),
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Transform.scale(
+              scale: 1.5,
+              child: Checkbox(
+                checkColor: white,
+                activeColor: red,
+                value: _isChecked,
+                shape: const CircleBorder(),
+                onChanged: (bool? value) {
+                  setState(() {
+                    _isChecked = value!;
+                  });
+
+                  if (value!) {
+                    print("cochée");
+                    setState(() {
+                      widget.onCheckedAdd(widget.product);
+                    });
+                  } else {
+                    widget.onCheckedRemove(widget.product);
+                  }
+                },
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    widget.product.name,
+                    style: TextStyle(
+                      color: _isChecked
+                          ? darkGreen50
+                          : darkGreen, // Change color if the product is checked
+                      fontSize: 16.0,
+                      decoration: _isChecked
+                          ? TextDecoration.lineThrough
+                          : null, // Strike through text if the product is checked
+                    ),
+                  ),
+                  if (widget.product.quantity != null &&
+                      widget.product.unit != null)
+                    Text(
+                      '${widget.product.quantity} ${widget.product.unit}',
+                      style:
+                          const TextStyle(color: darkGreen50, fontSize: 14.0),
+                    ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => widget.onIconPressed(widget.product),
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                child: const Icon(
+                  Icons.edit,
+                  color: darkGreen,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SecondPageState extends State<SecondPage> {
@@ -72,8 +173,18 @@ class _SecondPageState extends State<SecondPage> {
           padding: const EdgeInsets.fromLTRB(0, 16.0, 0, 0),
           child: Column(
             children: widget.products.map((Product product) {
-              return ProductItem(
+              return ProductShoppingItem(
                 product: product,
+                onCheckedAdd: (product) {
+                  setState(() {
+                    selectedProducts.add(product);
+                  });
+                },
+                onCheckedRemove: (product) {
+                  setState(() {
+                    selectedProducts.remove(product);
+                  });
+                },
                 onIconPressed: (product) {
                   enteredNumber.value = product.quantity ?? '0';
                   selectedUnit.value = product.unit ?? 'g';
@@ -88,7 +199,7 @@ class _SecondPageState extends State<SecondPage> {
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
                 color: const Color.fromRGBO(255, 255, 255, 1),
                 child: Container(
-                  height: 60.0,
+                  height: 70.0,
                   decoration: BoxDecoration(
                     boxShadow: [
                       BoxShadow(
@@ -106,12 +217,17 @@ class _SecondPageState extends State<SecondPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 8.0),
                           child: ElevatedButton(
                             onPressed: () => {
-                              //synchronisation
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => ShopEndPage(
+                                        selectedProducts: selectedProducts)),
+                              ),
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: red,
                               padding:
-                                  const EdgeInsets.symmetric(vertical: 12.0),
+                                  const EdgeInsets.symmetric(vertical: 24.0),
                               textStyle: const TextStyle(fontSize: 16.0),
                             ),
                             child: const Text("Terminer les courses"),

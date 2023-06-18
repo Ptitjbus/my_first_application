@@ -16,6 +16,8 @@ const Color white = Color(0xFFFDF3E8);
 const Color red = Color.fromARGB(255, 237, 105, 88);
 const Color red50 = Color.fromRGBO(237, 105, 88, 0.5);
 const Color green = Color.fromRGBO(80, 226, 139, 1);
+const Color green50 = Color.fromRGBO(80, 226, 139, 0.36);
+const Color green25 = Color.fromRGBO(80, 226, 139, 0.18);
 
 class Product {
   Product({required this.name, this.quantity, this.unit, required this.units});
@@ -151,19 +153,6 @@ class _ProductListState extends State<ProductList> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
-    _subscription =
-        Connectivity().onConnectivityChanged.listen((resultat) async {
-      bool connected = resultat != ConnectivityResult.none;
-      setState(() {
-        _connected = connected;
-      });
-
-      if (connected) {
-        await _connectWebSocket();
-      } else {
-        _disconnectWebSocket();
-      }
-    });
   }
 
   @override
@@ -172,7 +161,6 @@ class _ProductListState extends State<ProductList> {
     _searchController.dispose();
     _resultsController.close();
     _subscription?.cancel();
-    _disconnectWebSocket();
     super.dispose();
   }
 
@@ -189,39 +177,6 @@ class _ProductListState extends State<ProductList> {
         .fold<Map<String, List<String>>>({}, (map, key) {
       map[key] = allFoods[key]!;
       return map;
-    });
-  }
-
-  Future<void> _connectWebSocket() async {
-    _channel = IOWebSocketChannel.connect('ws://172.20.10.10:8081');
-
-    _channel!.ready.then((_) {
-      _channel!.stream.listen((message) {
-        // messages reçus
-      }, onDone: () {
-        setState(() {
-          _websocketConnected = false;
-        });
-      }, onError: (error) {
-        // Une erreur s'est produite.
-        print("Erreur lors de la connexion WebSocket: $error");
-        setState(() {
-          _websocketConnected = false;
-        });
-      });
-
-      setState(() {
-        _websocketConnected = true;
-      });
-    }).onError((error, stackTrace) {
-      print("WebsocketChannel was unable to establishconnection");
-    });
-  }
-
-  void _disconnectWebSocket() {
-    _channel?.sink.close();
-    setState(() {
-      _websocketConnected = false;
     });
   }
 
@@ -294,22 +249,6 @@ class _ProductListState extends State<ProductList> {
           title: const Text('Ma liste de course',
               style: TextStyle(color: darkGreen, fontSize: 18)),
           centerTitle: true,
-          leading: Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: InkWell(
-              onTap: () {
-                if (!_websocketConnected && _connected) {
-                  _connectWebSocket();
-                }
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _websocketConnected ? darkGreen : Colors.grey,
-                ),
-              ),
-            ),
-          ),
           bottom: PreferredSize(
             preferredSize:
                 const Size.fromHeight(30.0), // Augmentez la taille préférée
@@ -392,7 +331,7 @@ class _ProductListState extends State<ProductList> {
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
                 color: const Color.fromRGBO(255, 255, 255, 1),
                 child: Container(
-                  height: 50.0,
+                  height: 70.0,
                   decoration: BoxDecoration(
                     boxShadow: [
                       BoxShadow(
@@ -420,7 +359,7 @@ class _ProductListState extends State<ProductList> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: red,
                               padding:
-                                  const EdgeInsets.symmetric(vertical: 12.0),
+                                  const EdgeInsets.symmetric(vertical: 24.0),
                               textStyle: const TextStyle(fontSize: 16.0),
                             ),
                             child: const Text("Passer aux courses"),

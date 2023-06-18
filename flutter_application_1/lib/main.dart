@@ -8,11 +8,14 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:intl/intl.dart';
 import 'radio.dart';
 import 'keyboard.dart';
+import 'secondList.dart';
 
 const Color darkGreen = Color(0xFF2E5245);
 const Color darkGreen50 = Color.fromRGBO(46, 82, 69, 0.5);
 const Color white = Color(0xFFFDF3E8);
 const Color red = Color.fromARGB(255, 237, 105, 88);
+const Color red50 = Color.fromRGBO(237, 105, 88, 0.5);
+const Color green = Color.fromRGBO(80, 226, 139, 1);
 
 class Product {
   Product({required this.name, this.quantity, this.unit, required this.units});
@@ -84,6 +87,8 @@ class ProductItem extends StatelessWidget {
 }
 
 class ProductList extends StatefulWidget {
+  const ProductList({super.key});
+
   @override
   _ProductListState createState() => _ProductListState();
 }
@@ -260,15 +265,25 @@ class _ProductListState extends State<ProductList> {
     String value,
   ) {
     if (value == 'effacer') {
-      enteredNumber.value = enteredNumber.value
-          .substring(0, max(0, enteredNumber.value.length - 1));
+      setState(() {
+        enteredNumber.value = enteredNumber.value
+            .substring(0, max(0, enteredNumber.value.length - 1));
+      });
     } else {
-      enteredNumber.value += value;
+      setState(() {
+        enteredNumber.value += value;
+      });
     }
   }
 
   void onUnitSelected(unit) {
     selectedUnit.value = unit;
+  }
+
+  void _deleteProductItem(product) {
+    setState(() {
+      _products.remove(product);
+    });
   }
 
   @override
@@ -322,8 +337,8 @@ class _ProductListState extends State<ProductList> {
                     return ProductItem(
                       product: product,
                       onIconPressed: (product) {
-                        enteredNumber.value = product.quantity!;
-                        selectedUnit.value = product.unit!;
+                        enteredNumber.value = product.quantity ?? '0';
+                        selectedUnit.value = product.unit ?? 'g';
                         __displayEditionDialog(context, product);
                       },
                     );
@@ -372,41 +387,51 @@ class _ProductListState extends State<ProductList> {
             ],
           ),
         ),
-        bottomNavigationBar: BottomAppBar(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          color: const Color.fromRGBO(255, 255, 255, 1),
-          child: Container(
-            height: 50.0,
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.white.withOpacity(1),
-                  offset: const Offset(0, -40),
-                  blurRadius: 20.0,
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                FractionallySizedBox(
-                  widthFactor: 1,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: ElevatedButton(
-                      onPressed: () => _sendList(_products),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: red,
-                        padding: const EdgeInsets.symmetric(vertical: 12.0),
-                        textStyle: const TextStyle(fontSize: 16.0),
+        bottomNavigationBar: _products.isNotEmpty
+            ? BottomAppBar(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                color: const Color.fromRGBO(255, 255, 255, 1),
+                child: Container(
+                  height: 50.0,
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(1),
+                        offset: const Offset(0, -40),
+                        blurRadius: 20.0,
                       ),
-                      child: const Text("Envoyer les courses"),
-                    ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      FractionallySizedBox(
+                        widthFactor: 1,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: ElevatedButton(
+                            onPressed: () => {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        SecondPage(products: _products)),
+                              ),
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: red,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 12.0),
+                              textStyle: const TextStyle(fontSize: 16.0),
+                            ),
+                            child: const Text("Passer aux courses"),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ));
+              )
+            : null);
   }
 
   void __displayEditionDialog(BuildContext context, Product product) {
@@ -456,7 +481,7 @@ class _ProductListState extends State<ProductList> {
                                   ),
                                   onPressed: () => {
                                     Navigator.pop(context),
-                                    // _deleteProductItem(product)
+                                    _deleteProductItem(product)
                                   },
                                 ),
                               ],
@@ -506,31 +531,44 @@ class _ProductListState extends State<ProductList> {
                               onUnitSelected(unit);
                             },
                           ),
-                          SizedBox(
-                            width: double.infinity,
-                            child: TextButton(
-                              style: TextButton.styleFrom(
-                                backgroundColor: red,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              onPressed: () => {
-                                Navigator.pop(context),
-                                product.quantity = enteredNumber.value,
-                                product.unit = selectedUnit.value
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Text(
-                                  'Modifier',
-                                  style: TextStyle(
-                                    color: Colors.white,
+                          ValueListenableBuilder<String>(
+                              valueListenable: enteredNumber,
+                              builder: (context, number, child) {
+                                return SizedBox(
+                                  width: double.infinity,
+                                  child: TextButton(
+                                    style: TextButton.styleFrom(
+                                      backgroundColor:
+                                          enteredNumber.value.isNotEmpty
+                                              ? red
+                                              : red50,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    onPressed: () => {
+                                      if (enteredNumber.value.isNotEmpty)
+                                        {
+                                          Navigator.pop(context),
+                                          setState(() {
+                                            product.quantity =
+                                                enteredNumber.value;
+                                            product.unit = selectedUnit.value;
+                                          })
+                                        }
+                                    },
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Text(
+                                        'Modifier',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ),
-                          ),
+                                );
+                              }),
                           const SizedBox(height: 20),
                         ],
                       );
@@ -747,34 +785,47 @@ class _ProductListState extends State<ProductList> {
                                     onUnitSelected(unit);
                                   },
                                 ),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: TextButton(
-                                    style: TextButton.styleFrom(
-                                      backgroundColor: red,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                    onPressed: () => {
-                                      Navigator.pop(context),
-                                      _addProductItem(
-                                          selectedFood.value!.keys.first,
-                                          selectedFood.value!.values.first,
-                                          enteredNumber.value,
-                                          selectedUnit.value)
-                                    },
-                                    child: const Padding(
-                                      padding: EdgeInsets.all(16.0),
-                                      child: Text(
-                                        'Ajouter à la liste',
-                                        style: TextStyle(
-                                          color: Colors.white,
+                                ValueListenableBuilder<String>(
+                                    valueListenable: enteredNumber,
+                                    builder: (context, number, child) {
+                                      return SizedBox(
+                                        width: double.infinity,
+                                        child: TextButton(
+                                          style: TextButton.styleFrom(
+                                            backgroundColor:
+                                                enteredNumber.value.isNotEmpty
+                                                    ? red
+                                                    : red50,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                          onPressed: () => {
+                                            if (enteredNumber.value.isNotEmpty)
+                                              {
+                                                Navigator.pop(context),
+                                                _addProductItem(
+                                                    selectedFood
+                                                        .value!.keys.first,
+                                                    selectedFood
+                                                        .value!.values.first,
+                                                    enteredNumber.value,
+                                                    selectedUnit.value)
+                                              }
+                                          },
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(16.0),
+                                            child: Text(
+                                              'Ajouter à la liste',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
                                         ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                      );
+                                    }),
                                 const SizedBox(height: 20),
                               ],
                             );
@@ -796,9 +847,11 @@ class _ProductListState extends State<ProductList> {
 }
 
 class ProductApp extends StatelessWidget {
+  const ProductApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Frogy Liste de courses',
       home: ProductList(),

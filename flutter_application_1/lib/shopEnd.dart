@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:poc_liste_de_courses/syncFailed.dart';
 import 'package:poc_liste_de_courses/syncSucces.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -30,10 +31,15 @@ class _ShopEndPageState extends State<ShopEndPage> {
     _subscription =
         Connectivity().onConnectivityChanged.listen((resultat) async {
       bool connected = resultat != ConnectivityResult.none;
-      print(connected);
       setState(() {
         _connected = connected;
       });
+
+      if (_connected) {
+        _connectWebSocket();
+      } else {
+        _disconnectWebSocket();
+      }
     });
   }
 
@@ -63,7 +69,7 @@ class _ShopEndPageState extends State<ShopEndPage> {
   }
 
   Future<void> _connectWebSocket() async {
-    _channel = IOWebSocketChannel.connect('ws://172.20.10.10:8081');
+    _channel = IOWebSocketChannel.connect(serverAdress);
 
     _channel!.ready.then((_) {
       _channel!.stream.listen((message) {
@@ -71,14 +77,20 @@ class _ShopEndPageState extends State<ShopEndPage> {
           setState(() {
             _loading = false;
           });
-          _syncError = true;
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SyncFailedPage()),
+          );
         }
 
         if (message == 'syncSucceed') {
           setState(() {
             _loading = false;
           });
-          _syncError = false;
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SyncSuccessPage()),
+          );
         }
 
         print(message);
@@ -207,27 +219,22 @@ class _ShopEndPageState extends State<ShopEndPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 8.0),
                           child: ElevatedButton(
                             onPressed: () async {
-                              // if (!_loading) {
-                              setState(() {
-                                _loading = true;
-                              });
-                              _connectWebSocket().then((value) => {
-                                    if (_websocketConnected)
-                                      {_sendList(widget.selectedProducts)}
-                                    else
-                                      {
-                                        _connectWebSocket().then((value) => {
-                                              _sendList(widget.selectedProducts)
-                                            }),
-                                      }
+                              if (!_loading) {
+                                setState(() {
+                                  _loading = true;
+                                });
+                                if (!_websocketConnected) {
+                                  await _connectWebSocket();
+                                }
+
+                                if (_websocketConnected) {
+                                  _sendList(widget.selectedProducts);
+                                } else {
+                                  setState(() {
+                                    _loading = false;
                                   });
-                              // }
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //       builder: (context) =>
-                              //           const SyncSuccessPage()),
-                              // );
+                                }
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _loading ? red50 : red,

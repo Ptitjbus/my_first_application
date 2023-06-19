@@ -15,9 +15,12 @@ const Color darkGreen50 = Color.fromRGBO(46, 82, 69, 0.5);
 const Color white = Color(0xFFFDF3E8);
 const Color red = Color.fromARGB(255, 237, 105, 88);
 const Color red50 = Color.fromRGBO(237, 105, 88, 0.5);
+const Color redFailed = Color.fromRGBO(252, 227, 223, 1);
 const Color green = Color.fromRGBO(80, 226, 139, 1);
 const Color green25 = Color.fromRGBO(80, 226, 139, 0.18);
 const Color greenSuccess = Color.fromRGBO(52, 108, 82, 1);
+
+const String serverAdress = 'ws://172.20.10.10:8081';
 
 class Product {
   Product({required this.name, this.quantity, this.unit, required this.units});
@@ -118,7 +121,7 @@ class _ProductListState extends State<ProductList> {
     'Tomate': ['g', 'mg', 'kg', 'pièce(s)'],
     'Vanille': ['g', 'mg', 'kg', 'pièce(s)'],
     'Lait': ['l', 'ml', 'pièce(s)'],
-    'Œufs': ['g', 'mg', 'kg', 'pièce(s)'],
+    'Oeufs': ['g', 'mg', 'kg', 'pièce(s)'],
     'Beurre': ['g', 'mg', 'kg', 'pièce(s)'],
     'Yaourts nature': ['g', 'mg', 'kg', 'pièce(s)'],
     'Fromage': ['g', 'mg', 'kg', 'pièce(s)'],

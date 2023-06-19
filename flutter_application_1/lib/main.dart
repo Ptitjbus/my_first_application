@@ -16,8 +16,8 @@ const Color white = Color(0xFFFDF3E8);
 const Color red = Color.fromARGB(255, 237, 105, 88);
 const Color red50 = Color.fromRGBO(237, 105, 88, 0.5);
 const Color green = Color.fromRGBO(80, 226, 139, 1);
-const Color green50 = Color.fromRGBO(80, 226, 139, 0.36);
 const Color green25 = Color.fromRGBO(80, 226, 139, 0.18);
+const Color greenSuccess = Color.fromRGBO(52, 108, 82, 1);
 
 class Product {
   Product({required this.name, this.quantity, this.unit, required this.units});

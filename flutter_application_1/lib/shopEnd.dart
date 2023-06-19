@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:poc_liste_de_courses/syncSucces.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'main.dart';
@@ -20,6 +21,8 @@ class _ShopEndPageState extends State<ShopEndPage> {
   bool _websocketConnected = false;
   StreamSubscription<ConnectivityResult>? _subscription;
   WebSocketChannel? _channel;
+  bool _syncError = false;
+  bool _loading = false;
 
   @override
   void initState() {
@@ -34,10 +37,21 @@ class _ShopEndPageState extends State<ShopEndPage> {
     });
   }
 
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _checkConnectivity();
+
+    if (_connected) {
+      _connectWebSocket();
+    } else {
+      _disconnectWebSocket();
+    }
   }
 
   Future<void> _checkConnectivity() async {
@@ -53,6 +67,21 @@ class _ShopEndPageState extends State<ShopEndPage> {
 
     _channel!.ready.then((_) {
       _channel!.stream.listen((message) {
+        if (message == 'syncFailed') {
+          setState(() {
+            _loading = false;
+          });
+          _syncError = true;
+        }
+
+        if (message == 'syncSucceed') {
+          setState(() {
+            _loading = false;
+          });
+          _syncError = false;
+        }
+
+        print(message);
         // messages reçus
       }, onDone: () {
         setState(() {
@@ -159,7 +188,7 @@ class _ShopEndPageState extends State<ShopEndPage> {
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           color: const Color.fromRGBO(255, 255, 255, 1),
           child: Container(
-            height: 70.0,
+            height: 90.0,
             decoration: BoxDecoration(
               boxShadow: [
                 BoxShadow(
@@ -177,23 +206,40 @@ class _ShopEndPageState extends State<ShopEndPage> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8.0),
                           child: ElevatedButton(
-                            onPressed: () async => {
-                              await _connectWebSocket().then((value) => {
+                            onPressed: () async {
+                              // if (!_loading) {
+                              setState(() {
+                                _loading = true;
+                              });
+                              _connectWebSocket().then((value) => {
                                     if (_websocketConnected)
                                       {_sendList(widget.selectedProducts)}
                                     else
                                       {
-                                        _connectWebSocket(),
+                                        _connectWebSocket().then((value) => {
+                                              _sendList(widget.selectedProducts)
+                                            }),
                                       }
-                                  }),
+                                  });
+                              // }
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //       builder: (context) =>
+                              //           const SyncSuccessPage()),
+                              // );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: red,
+                              backgroundColor: _loading ? red50 : red,
                               padding:
                                   const EdgeInsets.symmetric(vertical: 24.0),
                               textStyle: const TextStyle(fontSize: 16.0),
                             ),
-                            child: const Text("Snchronisation"),
+                            child: _loading
+                                ? const CircularProgressIndicator(
+                                    color: white,
+                                  )
+                                : const Text("Synchronisation"),
                           ),
                         ),
                       ),
